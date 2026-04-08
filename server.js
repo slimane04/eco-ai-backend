@@ -12,7 +12,7 @@ app.use(express.json());
 
 const allowedOrigins = [
   "http://localhost:5173", // tests en local
-  "https://ton-site-final.vercel.app" // Remplace par ton URL Vercel 
+  "https://eco-ai-frontend.vercel.app/" // Remplace par ton URL Vercel 
 ];
 
 app.use(cors({
