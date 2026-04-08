@@ -44,19 +44,23 @@ mongoose.connect(process.env.MONGODB_URI)
 // 2. Nodemailer setup
 const PORT = process.env.PORT || 5000;
 
-
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, 
+  // On utilise l'IP directe de smtp.gmail.com pour forcer l'IPv4
+  host: '74.125.133.108', 
+  port: 465,
+  secure: true, // SSL direct
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  family:4
-  });
-  
-
+  tls: {
+    // Indispensable car on se connecte via IP (le certificat est pour gmail.com)
+    rejectUnauthorized: false,
+    servername: 'smtp.gmail.com'
+  },
+  connectionTimeout: 20000, // On laisse 20 secondes pour se connecter
+  greetingTimeout: 20000,
+});
 // 3. Route POST
 app.post("/contact", async (req, res) => {
   const { nom, email, phone, message } = req.body;
