@@ -8,11 +8,26 @@ const nodemailer = require("nodemailer");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
- console.log("Utilisateur mail chargé :", process.env.EMAIL_USER);
+
+
+const allowedOrigins = [
+  "http://localhost:5173", // tests en local
+  "https://ton-site-final.vercel.app" // Remplace par ton URL Vercel 
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS non autorisé"));
+    }
+  }
+}));
+
 // 1.MongoDB CONNECTION
-//mongoose.connect("mongodb://127.0.0.1:27017/tajirli_db");
-console.log("URI MongoDB:", process.env.MONGODB_URI);
+
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Connecté à MongoDB Atlas"))
   .catch((err) => console.error("❌ Erreur MongoDB :", err.message));
@@ -71,4 +86,6 @@ app.post("/contact", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Serveur prêt sur le port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Serveur démarré sur le port ${PORT}`);
+});
