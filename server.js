@@ -43,13 +43,18 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // 2. Nodemailer setup
 const PORT = process.env.PORT || 5000;
+
+
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, 
   auth: {
-    user: process.env.EMAIL_USER, // Ton adresse Gmail
-    pass: process.env.EMAIL_PASS  // Ton "Mot de passe d'application" Google
-  }
-});
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  });
+  family: 4 
 
 // 3. Route POST
 app.post("/contact", async (req, res) => {
