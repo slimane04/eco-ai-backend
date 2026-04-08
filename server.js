@@ -10,6 +10,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 // 2. CONFIGURATION CORS
@@ -28,7 +29,7 @@ app.use(cors({
   }
 }));
 */
-app.use(cors()); // Permet toutes les origines 
+ // Permet toutes les origines 
 // 3. CONNEXION MONGODB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Connecté à MongoDB Atlas"))
