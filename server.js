@@ -1,4 +1,4 @@
-
+// 1. FORCER IPV4 (Crucial pour Render)
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
 
@@ -8,15 +8,14 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env.local') });
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
 
 const app = express();
 app.use(express.json());
 
-
+// 2. CONFIGURATION CORS
 const allowedOrigins = [
-  "http://localhost:5173", // tests en local
-  "https://eco-ai-frontend.vercel.app" // Remplace par ton URL Vercel 
+  "http://localhost:5173", 
+  "https://eco-ai-frontend.vercel.app" 
 ];
 
 app.use(cors({
@@ -29,15 +28,12 @@ app.use(cors({
   }
 }));
 
-
-// 1.MongoDB CONNECTION
-
-
+// 3. CONNEXION MONGODB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Connecté à MongoDB Atlas"))
   .catch((err) => console.error("❌ Erreur MongoDB :", err.message));
 
-  const Contact = mongoose.model("Contact", {
+const Contact = mongoose.model("Contact", {
   nom: String,
   phone: String,
   email: String,
@@ -45,52 +41,58 @@ mongoose.connect(process.env.MONGODB_URI)
   date: { type: Date, default: Date.now }
 });
 
-// 2. Nodemailer setup
-const PORT = process.env.PORT || 5000;
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-// 3. Route POST
+// 4. ROUTE POST (VERSION BREVO API)
 app.post("/contact", async (req, res) => {
   const { nom, email, phone, message } = req.body;
- 
+
   try {
-    // A. On sauvegarde dans la base de données
+    // A. Sauvegarde dans MongoDB
     const nouveauContact = new Contact({ nom, email, phone, message });
     await nouveauContact.save();
-     
-    // B. On prépare l'email avec TOUTES les informations du formulaire
-    const mailOptions = {
-      from: 'Tajirli Web <contact.tajirli@gmail.com>',
-      to: 'contact.tajirli@gmail.com', // Où tu veux recevoir les infos
-      subject: `Nouveau message de : ${nom}`,
-      html: `
-        <h3>Nouveau prospect Tajirli</h3>
-        <p><strong>Nom complet :</strong> ${nom}</p>
-        <p><strong>Email :</strong> ${email}</p>
-        <p><strong>Téléphone :</strong> ${phone}</p>
-        <p><strong>Message :</strong></p>
-        <p>${message}</p>
-        <hr>
-        <p>Ce message a été enregistré dans ta base de données.</p>
-      `
-    };
 
-    // C. Envoi réel
-    await transporter.sendMail(mailOptions);
-    
-    res.status(200).send({ success: true });
+    // B. Envoi via l'API de Brevo (Remplace Nodemailer)
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": process.env.BREVO_API_KEY, // Assure-toi que cette clé est sur Render
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: { name: "Tajirli Web", email: "contact.tajirli@gmail.com" },
+        to: [{ email: "contact.tajirli@gmail.com" }],
+        subject: `🚀 Nouveau prospect : ${nom}`,
+        htmlContent: `
+          <div style="font-family: sans-serif; line-height: 1.5;">
+            <h3>Nouveau message de ton site Tajirli</h3>
+            <p><strong>Nom :</strong> ${nom}</p>
+            <p><strong>Email :</strong> ${email}</p>
+            <p><strong>Téléphone :</strong> ${phone}</p>
+            <p><strong>Message :</strong></p>
+            <p style="background: #f4f4f4; padding: 15px; border-radius: 5px;">${message}</p>
+            <hr>
+            <p style="font-size: 0.8rem; color: #666;">Ce prospect a aussi été enregistré dans MongoDB Atlas.</p>
+          </div>
+        `
+      })
+    });
+
+    if (response.ok) {
+      console.log("✅ Email envoyé avec succès via Brevo");
+      res.status(200).send({ success: true });
+    } else {
+      const errorData = await response.json();
+      console.error("❌ Erreur API Brevo:", errorData);
+      res.status(500).send({ error: "Erreur lors de l'envoi de l'email" });
+    }
+
   } catch (error) {
-    console.error(error);
+    console.error("❌ Erreur Serveur:", error);
     res.status(500).send({ error: "Erreur serveur" });
   }
 });
 
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`🚀 Serveur démarré sur le port ${PORT}`);
 });
