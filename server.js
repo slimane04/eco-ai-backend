@@ -1,3 +1,7 @@
+
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 require('dotenv').config({ path: path.resolve(__dirname, '.env.local') });
@@ -45,21 +49,11 @@ mongoose.connect(process.env.MONGODB_URI)
 const PORT = process.env.PORT || 5000;
 
 const transporter = nodemailer.createTransport({
-  // On utilise l'IP directe de smtp.gmail.com pour forcer l'IPv4
-  host: '74.125.133.108', 
-  port: 465,
-  secure: true, // SSL direct
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    // Indispensable car on se connecte via IP (le certificat est pour gmail.com)
-    rejectUnauthorized: false,
-    servername: 'smtp.gmail.com'
-  },
-  connectionTimeout: 20000, // On laisse 20 secondes pour se connecter
-  greetingTimeout: 20000,
+  }
 });
 // 3. Route POST
 app.post("/contact", async (req, res) => {
