@@ -53,8 +53,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
+  family:4
   });
-  family: 4 
+  
 
 // 3. Route POST
 app.post("/contact", async (req, res) => {
