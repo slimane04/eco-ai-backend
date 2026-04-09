@@ -29,7 +29,10 @@ app.use(cors({
   }
 }));
 
- 
+ app.get("/", (req, res) => {
+
+  res.status(200).send("Tajirli Backend is awake! 🚀");
+});
 // 3. CONNEXION MONGODB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Connecté à MongoDB Atlas"))
