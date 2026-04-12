@@ -8,6 +8,9 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env.local') });
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("./models/User");
 
 const app = express();
 
@@ -94,6 +97,63 @@ app.post("/contact", async (req, res) => {
   } catch (error) {
     console.error("❌ Erreur Serveur:", error);
     res.status(500).send({ error: "Erreur serveur" });
+  }
+});
+
+// 5. AUTHENTICATION ROUTES
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { firstName, lastName, storeName, email, password } = req.body;
+    
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ error: "Cet email est déjà utilisé" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    user = new User({
+      firstName,
+      lastName,
+      storeName,
+      email,
+      password: hashedPassword
+    });
+
+    await user.save();
+
+    const payload = { userId: user.id };
+    const token = jwt.sign(payload, process.env.JWT_SECRET || "default_secret", { expiresIn: '5d' });
+
+    res.status(201).json({ token, storeUrlSlug: user.storeUrlSlug });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Erreur serveur");
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: "Identifiants invalides" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Identifiants invalides" });
+    }
+
+    const payload = { userId: user.id };
+    const token = jwt.sign(payload, process.env.JWT_SECRET || "default_secret", { expiresIn: '5d' });
+
+    res.json({ token, storeUrlSlug: user.storeUrlSlug });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Erreur serveur");
   }
 });
 
